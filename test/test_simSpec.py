@@ -1,13 +1,14 @@
 """
 Tests for `simSpec` module.
 """
+
 import pytest
 import numpy as np
-from pathlib2 import Path
+from pathlib import Path
 from astropy.io import fits
 
 from fabspec import Spectra
-from fabspec.simSpec import SimSpec, SimSpecUtil
+from fabspec.simSpec import SimSpec
 
 _PARENT_DIR = Path(__file__).resolve().parents[1]
 

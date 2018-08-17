@@ -7,7 +7,6 @@ import numpy as np
 from scipy.interpolate import interp1d
 from copy import deepcopy
 
-
 class Spectra(object):
     """
     Contains a spectra and relevant information.
