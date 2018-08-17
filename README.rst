@@ -8,7 +8,7 @@ Fitter for Absorption-line Spectra
 .. image:: https://travis-ci.org/ajshajib/fabspec.png?branch=master
     :target: https://travis-ci.org/ajshajib/fabspec
 
-Extraact stellar or gas kinematics byfrom galaxy absorption-line IFU or long-slit spectra.
+Extract stellar or gas kinematics from galaxy absorption-line IFU or long-slit spectra.
 
 
 Features

@@ -3,7 +3,12 @@
 History
 -------
 
-0.0.0 (2013-07-10)
+0.0.0 (2018-03-03)
 ++++++++++++++++++
 
-* First release on PyPI.
+* First commit.
+
+0.0.1 (2018-08-16)
+++++++++++++++++++
+
+* Added `simSpec` module for simulating observed spectra from template.

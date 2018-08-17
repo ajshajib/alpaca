@@ -23,8 +23,9 @@ history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 
 setup(
     name='fabspec',
-    version='0.0.0',
-    description='Extraact stellar or gas kinematics from galaxy absorption-line IFU or long-slit spectra.',
+    version='0.0.1',
+    description='Extract stellar or gas kinematics from galaxy '
+                'absorption-line IFU or long-slit spectra.',
     long_description=readme + '\n\n' + doclink + '\n\n' + history,
     author='Anowar J. Shajib',
     author_email='ajshajib@gmail.com',
