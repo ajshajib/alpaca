@@ -5,8 +5,8 @@ Fitter for Absorption-line Spectra
 .. image:: https://badge.fury.io/py/fabspec.png
     :target: http://badge.fury.io/py/fabspec
 
-.. image:: https://travis-ci.org/ajshajib/fabspec.png?branch=master
-    :target: https://travis-ci.org/ajshajib/fabspec
+.. image:: https://travis-ci.com/ajshajib/fabspec.png?branch=master
+    :target: https://travis-ci.com/ajshajib/fabspec
 
 .. image:: https://readthedocs.org/projects/fabspec/badge/?version=latest
         :target: http://fabspec.readthedocs.io/en/latest/?badge=latest
