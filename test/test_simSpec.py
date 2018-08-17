@@ -3,7 +3,7 @@ Tests for `simSpec` module.
 """
 import pytest
 import numpy as np
-from pathlib import Path
+from pathlib2 import Path
 from astropy.io import fits
 
 from fabspec import Spectra
