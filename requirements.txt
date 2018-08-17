@@ -1,3 +1,4 @@
 wheel>=0.22
-scipy>=1.0.0
+scipy
 pathlib2
+astropy
