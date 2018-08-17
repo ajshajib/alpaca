@@ -4,14 +4,24 @@ language: python
 
 python:
   - "3.6"
+  - "3.4"
   - "2.7"
   #- "2.6"
   #- "pypy"
 
+before_install:
+  - pip install coveralls
+  - pip install python-coveralls
+
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
-install: 
+install:
+  - pip install .
   - pip install -r requirements.txt
 
 # command to run tests, e.g. python setup.py test
 script:
-  - py.test
+  #- py.test
+  - coverage run --source fabspec setup.py test
+
+after_success:
+    coveralls
