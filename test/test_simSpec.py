@@ -2,7 +2,6 @@
 Tests for `simSpec` module.
 """
 
-import pytest
 import numpy as np
 from pathlib import Path
 from astropy.io import fits
@@ -45,8 +44,8 @@ class TestFabspec(object):
         template_wavelengths = np.e ** template_wavelengths
 
         template = Spectra(template_spectra, template_wavelengths)
-        template.clip(lambda_start / (1. + z) / 1.2,
-                      lambda_end / (1. + z) * 1.2)
+        template.clip(start_wavelength=lambda_start/(1. + z)/1.2,
+                      end_wavelength=lambda_end/(1. + z)*1.2)
 
         sim = SimSpec(template, wavelength_range=(lambda_start, lambda_end),
                       delta_lambda=(lambda_end - lambda_start) / pixels,

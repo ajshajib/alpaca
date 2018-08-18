@@ -7,6 +7,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from copy import deepcopy
 
+
 class Spectra(object):
     """
     Contains a spectra and relevant information.
@@ -14,7 +15,6 @@ class Spectra(object):
 
     def __init__(self, spectra, wavelengths, *args, **kwargs):
         """
-
         :param spectra: Array of flux.
         :param wavelengths: Array of wavelengths, must be same length as
         spectra.
@@ -97,11 +97,13 @@ class Spectra(object):
         :param dlambda: Wavelength resolution for linear intervals.
         :return:
         """
-        sample = interp1d(self.wavelengths, self.spectra, kind='linear')
-        # shortening the wavelength range by 1 index so that
-        # `scipy.interpolate.interp1d` does not throw error
-        self.wavelengths = np.arange(self.wavelengths[1], self.wavelengths[-2],
-                                     dlambda)
+        sample = interp1d(self.wavelengths, self.spectra, kind='linear',
+                          bounds_error=False, fill_value=0.)
+        # NOT shortening the wavelength range by 1 index so that
+        # `scipy.interpolate.interp1d` does not throw error. Fill value with 0
+        # outside interpolation range.
+        self.wavelengths = np.arange(self.wavelengths[0],
+                                     self.wavelengths[-1]+dlambda/2., dlambda)
 
         self.spectra = sample(self.wavelengths)
 
@@ -127,16 +129,24 @@ class Spectra(object):
         Get the wavelength range of the spectra.
         :return:
         """
-        return self.wavelengths[[0, -1]] \
-               + np.array([-0.5, 0.5])*self.get_delta_lambda()
+        return self.wavelengths[[0, -1]] #\
+        #       + np.array([-0.5, 0.5])*self.get_delta_lambda()
 
-    def clip(self, start_wavelength, end_wavelength):
+    def clip(self, start_wavelength=None, end_wavelength=None):
         """
         Clip the spectra within the specified wavelengths.
-        :param start_wavelength: Start wavelength for clipping.
-        :param end_wavelength: End wavelength for clipping.
+        :param start_wavelength: Start wavelength for clipping. If
+        `None`, set to minimum of current wavelength range.
+        :param end_wavelength: End wavelength for clipping. If `None`,
+        set to maximum of current wavelength range.
         :return:
         """
+        if start_wavelength is None:
+            start_wavelength = self.wavelengths[0]
+
+        if end_wavelength is None:
+            end_wavelength = self.wavelengths[-1]
+
         self.spectra = self.spectra[(self.wavelengths >= start_wavelength) &
                                     (self.wavelengths <= end_wavelength)]
         self.wavelengths = self.wavelengths[(self.wavelengths >=
