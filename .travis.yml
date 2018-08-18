@@ -21,7 +21,7 @@ install:
 # command to run tests, e.g. python setup.py test
 script:
   #- py.test
-  - coverage run -m py.test
+  - coverage run -m py.test ./test/test*.py
 
 after_success:
     coveralls
