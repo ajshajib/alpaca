@@ -21,7 +21,7 @@ install:
 # command to run tests, e.g. python setup.py test
 script:
   #- py.test
-  - coverage run --source fabspec setup.py test
+  - coverage run -m py.test
 
 after_success:
     coveralls
