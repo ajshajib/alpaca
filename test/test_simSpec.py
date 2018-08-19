@@ -7,12 +7,46 @@ from pathlib import Path
 from astropy.io import fits
 
 from fabspec import Spectra
-from fabspec.simSpec import SimSpec
+from fabspec.simSpec import SimSpec, SimSpecUtil
 
 _PARENT_DIR = Path(__file__).resolve().parents[1]
 
 
-class TestFabspec(object):
+class TestSimSpecUtil(object):
+
+    @classmethod
+    def setup_class(cls):
+        pass
+
+    def test_apply_poisson_noise(self):
+        """
+        Test `SimSpecUtil.apply_poisson_noise()`.
+        :return:
+        :rtype:
+        """
+        sim_util = SimSpecUtil()
+
+        xs = np.linspace(0, 1., 1000)
+        ys = np.ones(len(xs))
+
+        spectra = Spectra(ys, xs)
+
+        sns = np.arange(20, 101, 20)
+        for sn in sns:
+            spectra = sim_util.apply_poisson_noise(spectra, sn)
+
+            np.testing.assert_allclose(
+                np.sqrt(np.mean((spectra.spectra-1.)**2)), 1./sn,
+                atol=0.01, rtol=0.01
+            )
+            spectra.reset_to_initial()
+
+    @classmethod
+    def teardown_class(cls):
+        pass
+
+
+class TestSimSpec(object):
 
     @classmethod
     def setup_class(cls):
