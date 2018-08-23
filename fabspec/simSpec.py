@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Module to simulate a spectra observed by a telescope given the
 instruments specifications.

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Module to simulate OH sky lines spectra.
 """

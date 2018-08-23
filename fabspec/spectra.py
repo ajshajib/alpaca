@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 This module defines the class Spectra() that contains a spectra and
 relevant information.
