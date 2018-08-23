@@ -5,6 +5,7 @@
       <w>linearize</w>
       <w>oversample</w>
       <w>rebin</w>
+      <w>wavenumber</w>
     </words>
   </dictionary>
 </component>

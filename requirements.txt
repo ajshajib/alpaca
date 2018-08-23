@@ -1,4 +1,6 @@
 wheel>=0.22
+numpy
 scipy
 astropy
 pathlib
+pandas

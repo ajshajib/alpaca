@@ -3,6 +3,7 @@ Tests for `fabspec` module.
 """
 
 import numpy as np
+
 from fabspec import Spectra
 
 
@@ -21,7 +22,7 @@ class TestFabspec(object):
         xs = np.arange(0., 100., 1.)
         ys = np.sin(xs)
 
-        spectra = Spectra(ys, xs, flux_unit='test', wavelength_unit='test')
+        spectra = Spectra(xs, ys, flux_unit='test', wavelength_unit='test')
 
         assert spectra.flux_unit == 'test' \
                and spectra.wavelength_unit == 'test'
@@ -40,7 +41,7 @@ class TestFabspec(object):
         xs = np.logspace(0, 1, 100)
         ys = np.tanh(xs)
 
-        spectra = Spectra(ys, xs, flux_unit='test', wavelength_unit='test')
+        spectra = Spectra(xs, ys, flux_unit='test', wavelength_unit='test')
         spectra.linearize_wavelength_scale(dlambda=1.)
         assert spectra.get_delta_lambda() == 1.
         assert (spectra.get_wavelength_range() == np.array([1., 10.])).all()

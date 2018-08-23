@@ -13,7 +13,7 @@ class Spectra(object):
     Contains a spectra and relevant information.
     """
 
-    def __init__(self, spectra, wavelengths, *args, **kwargs):
+    def __init__(self, wavelengths, spectra, *args, **kwargs):
         """
         :param spectra: Array of flux.
         :param wavelengths: Array of wavelengths, must be same length as
@@ -29,7 +29,7 @@ class Spectra(object):
 
         self._spectra = np.array(spectra)  # to store the original spectra
         self.spectra = deepcopy(self._spectra)
-        self._wavelengths = np.array(wavelengths) # to store the original
+        self._wavelengths = np.array(wavelengths)  # to store the original
         self.wavelengths = deepcopy(self._wavelengths)
 
         if 'resolution_fwhm' in kwargs:

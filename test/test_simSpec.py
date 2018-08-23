@@ -7,7 +7,8 @@ from pathlib import Path
 from astropy.io import fits
 
 from fabspec import Spectra
-from fabspec.simSpec import SimSpec, SimSpecUtil
+from fabspec.simSpec import SimSpec
+from fabspec.simSpec import SimSpecUtil as sim_util
 
 _PARENT_DIR = Path(__file__).resolve().parents[1]
 
@@ -24,12 +25,10 @@ class TestSimSpecUtil(object):
         :return:
         :rtype:
         """
-        sim_util = SimSpecUtil()
-
         xs = np.linspace(0, 1., 1000)
         ys = np.ones(len(xs))
 
-        spectra = Spectra(ys, xs)
+        spectra = Spectra(xs, ys)
 
         sns = np.arange(20, 101, 20)
         for sn in sns:
@@ -40,6 +39,36 @@ class TestSimSpecUtil(object):
                 atol=0.01, rtol=0.01
             )
             spectra.reset_to_initial()
+
+    def test_air_vacuum_wavelength_conversions(self):
+        """
+        Test the methods in `SkyLines` class.
+        :return:
+        """
+        wavelength = 1529.6  # nm
+
+        # test vacuum to air using Ciddor
+        wavelength_air = sim_util.vacuum_to_air_wavelength_ciddor(wavelength)
+        np.testing.assert_allclose(wavelength/1.00027328, wavelength_air,
+                                   atol=1e-8)
+
+        # test air to vacuum using Ciddor
+        wavelength_vac = sim_util.air_to_vacuum_wavelength(wavelength_air,
+                                                           formula='ciddor')
+        np.testing.assert_allclose(wavelength, wavelength_vac,
+                                   atol=1e-8)
+
+        # test vacuum to air using Mathar
+        wavelength_air = sim_util.vacuum_to_air_wavelength_mathar(wavelength,
+                                                            temperature=288.15)
+        np.testing.assert_allclose(wavelength/1.00027332, wavelength_air,
+                                   atol=1e-8)
+
+        # test air to vacuum using Mathar
+        wavelength_vac = sim_util.air_to_vacuum_wavelength(wavelength_air,
+                                                            temperature=288.15)
+        np.testing.assert_allclose(wavelength, wavelength_vac,
+                                   atol=1e-8)
 
     @classmethod
     def teardown_class(cls):
@@ -77,7 +106,7 @@ class TestSimSpec(object):
                            header['CRVAL1']
         template_wavelengths = np.e ** template_wavelengths
 
-        template = Spectra(template_spectra, template_wavelengths)
+        template = Spectra(template_wavelengths, template_spectra)
         template.clip(start_wavelength=lambda_start/(1. + z)/1.2,
                       end_wavelength=lambda_end/(1. + z)*1.2)
 
