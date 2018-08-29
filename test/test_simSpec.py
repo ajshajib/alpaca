@@ -6,10 +6,12 @@ Tests for `simSpec` module.
 import numpy as np
 from pathlib import Path
 from astropy.io import fits
+from copy import deepcopy
 
 from fabspec import Spectra
 from fabspec.simSpec import SimSpec
-from fabspec.simSpec import SimSpecUtil as sim_util
+from fabspec.simSpec import SpecUtil as spec_util
+from fabspec.skyLines import SkyLines
 
 _PARENT_DIR = Path(__file__).resolve().parents[1]
 
@@ -22,7 +24,7 @@ class TestSimSpecUtil(object):
 
     def test_apply_poisson_noise(self):
         """
-        Test `SimSpecUtil.apply_poisson_noise()`.
+        Test `SpecUtil.apply_poisson_noise()`.
         :return:
         :rtype:
         """
@@ -33,7 +35,7 @@ class TestSimSpecUtil(object):
 
         sns = np.arange(20, 101, 20)
         for sn in sns:
-            spectra = sim_util.apply_poisson_noise(spectra, sn)
+            spectra = spec_util.apply_poisson_noise(spectra, sn)
 
             np.testing.assert_allclose(
                 np.sqrt(np.mean((spectra.spectra-1.)**2)), 1./sn,
@@ -43,33 +45,114 @@ class TestSimSpecUtil(object):
 
     def test_air_vacuum_wavelength_conversions(self):
         """
-        Test the methods in `SkyLines` class.
+        Test air-vacuum in conversion methods in `SpecUtil`.
         :return:
         """
         wavelength = 1529.6  # nm
 
         # test vacuum to air using Ciddor
-        wavelength_air = sim_util.vacuum_to_air_wavelength_ciddor(wavelength)
+        wavelength_air = spec_util.vacuum_to_air_wavelength_ciddor(wavelength)
         np.testing.assert_allclose(wavelength/1.00027328, wavelength_air,
                                    atol=1e-8)
 
         # test air to vacuum using Ciddor
-        wavelength_vac = sim_util.air_to_vacuum_wavelength(wavelength_air,
-                                                           formula='ciddor')
+        wavelength_vac = spec_util.air_to_vacuum_wavelength(wavelength_air,
+                                                            formula='ciddor')
         np.testing.assert_allclose(wavelength, wavelength_vac,
                                    atol=1e-8)
 
         # test vacuum to air using Mathar
-        wavelength_air = sim_util.vacuum_to_air_wavelength_mathar(wavelength,
-                                                            temperature=288.15)
+        wavelength_air = spec_util.vacuum_to_air_wavelength_mathar(wavelength,
+                                                                   temperature=288.15)
         np.testing.assert_allclose(wavelength/1.00027332, wavelength_air,
                                    atol=1e-8)
 
         # test air to vacuum using Mathar
-        wavelength_vac = sim_util.air_to_vacuum_wavelength(wavelength_air,
+        wavelength_vac = spec_util.air_to_vacuum_wavelength(wavelength_air,
                                                             temperature=288.15)
         np.testing.assert_allclose(wavelength, wavelength_vac,
                                    atol=1e-8)
+
+    def test_remap_wavelengths(self):
+        """
+        Test `SpecUtil.remap_wavelengths`.
+
+        To-do:
+            - Check if these tests are sufficient.
+        :return:
+        :rtype:
+        """
+        # with constant shift
+        xs = np.linspace(0, 2*np.pi, 100)
+        ys = np.sin(xs)
+        spectra = Spectra(xs, ys)
+
+        delta_xs = np.ones_like(xs) * 0.95 * (xs[1] - xs[0])
+        remapping = Spectra(xs, delta_xs)
+
+        new_spectra = spec_util.remap_wavelengths(spectra, remapping)
+
+        standard = np.sin(xs + delta_xs)
+
+        np.testing.assert_allclose(standard, new_spectra.spectra,
+                                   atol=0.1, rtol=0.1)
+
+        # with sinusoidal shift
+        xs = np.linspace(0, 2 * np.pi, 100)
+        ys = np.sin(xs)
+        spectra = Spectra(xs, ys)
+
+        delta_xs = np.sin(xs) * 0.95 * (xs[1] - xs[0])
+        remapping = Spectra(xs, delta_xs)
+
+        new_spectra = spec_util.remap_wavelengths(spectra, remapping)
+
+        standard = np.sin(xs + delta_xs)
+
+        np.testing.assert_allclose(standard, new_spectra.spectra,
+                                   atol=0.01, rtol=0.01)
+
+    def test_apply_throughput(self):
+        """
+        Test `SpecUtil.apply_throughput`.
+        :return:
+        :rtype:
+        """
+        xs = np.linspace(0, 2 * np.pi, 100)
+        ys = np.sin(xs)
+        spectra = Spectra(xs, ys)
+
+        throughput = Spectra(xs, np.cos(xs))
+
+        new_spectra = spec_util.apply_throughput(spectra, throughput)
+
+        standard = 0.5 * np.sin(2*xs)
+
+        np.testing.assert_allclose(standard, new_spectra.spectra,
+                                   atol=0.01, rtol=0.01)
+
+    def test_convolve_variable(self):
+        """
+        Test `SpecUtil.convolve_variable`.
+        :return:
+        """
+        sky_lines = SkyLines()
+        sky_lines.setup_wavelengths(start=2160, end=2385, resolution=0.025)
+        sky_spec = sky_lines.get_sky_spectra()
+
+        fwhm = deepcopy(sky_spec)
+        fwhm.spectra = np.ones_like(fwhm.spectra) * 2.7
+
+        convolved_spec = deepcopy(sky_spec)
+        convolved_spec = spec_util.convolve_variable(convolved_spec, fwhm)
+
+        sky_spec = spec_util.convolve(sky_spec, 2.7)
+
+        sky_spec.normalize_flux()
+        convolved_spec.normalize_flux()
+
+        np.testing.assert_allclose(sky_spec.spectra, convolved_spec.spectra,
+                                   atol=0.01, rtol=0.02)
 
     @classmethod
     def teardown_class(cls):

@@ -4,4 +4,4 @@ __email__ = 'ajshajib@gmail.com'
 __version__ = '0.0.1'
 
 from .spectra import Spectra
-from .simSpec import SimSpecUtil, SimSpec
+from .simSpec import SpecUtil, SimSpec

@@ -11,8 +11,10 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.optimize import brentq
 from copy import deepcopy
 
+from .constants import Constants as cs
 
-class SimSpecUtil(object):
+
+class SpecUtil(object):
     """
     Contains utility methods to simulate spectra.
     """
@@ -30,13 +32,16 @@ class SimSpecUtil(object):
         if conserve_flux:
             total_flux = np.sum(spectra.spectra) * spectra.get_delta_lambda()
 
-        sample = interp1d(spectra.wavelengths, spectra.spectra, kind='linear',
-                          bounds_error=False, fill_value=0)
-        spectra.wavelengths = np.linspace(spectra.wavelengths[0],
+        #sample = interp1d(spectra.wavelengths, spectra.spectra, kind='linear',
+        #                  bounds_error=False, fill_value=0)
+        new_wavelengths = np.linspace(spectra.wavelengths[0],
                                        spectra.wavelengths[-1],
                                        oversample_ratio
                                           * len(spectra.wavelengths))
-        spectra.spectra = sample(spectra.wavelengths)
+        #spectra.spectra = sample(spectra.wavelengths)
+        spectra.spectra = np.interp(new_wavelengths, spectra.wavelengths,
+                                    spectra.spectra)
+        spectra.wavelengths = new_wavelengths
 
         if conserve_flux:
             spectra.spectra *= total_flux / np.sum(spectra.spectra) \
@@ -64,8 +69,8 @@ class SimSpecUtil(object):
 
         # find out the additional dispersion needed to get final
         # dispersion of sigma
-        std_dev_0 = fwhm / 2.355 / dlambda
-        std_dev = np.sqrt((sigma / 299792.458 * lambda_c / dlambda) ** 2
+        std_dev_0 = fwhm * cs.FWHM_2_SIGMA / dlambda
+        std_dev = np.sqrt((sigma / cs.c_kms * lambda_c / dlambda) ** 2
                           - std_dev_0 ** 2)
 
         if verbose:
@@ -98,7 +103,7 @@ class SimSpecUtil(object):
         # vals = sn**2/np.median(spectra) * np.loadtxt('./real_noise.txt')
         if noise_spectra is None:
             noise_spectra = 1.
-        vals = sn ** 2 / np.median(spectra.spectra) / noise_spectra \
+        vals = sn**2 / np.median(spectra.spectra) / noise_spectra \
                * np.median(noise_spectra)
 
         # Ensure image is exclusively positive
@@ -120,12 +125,13 @@ class SimSpecUtil(object):
         """
         Convovle the instrumental FWHM into the spectra.
         :param spectra: `Spectra` object.
-        :param inst_fwhm: FWHM of the convolution kernel.
+        :param fwhm: FWHM of the convolution kernel. In the same unit
+        of `spectra.wavelengths`.
         :param verbose:
         :return:
         """
-        d_lambda = np.mean(np.diff(spectra.wavelengths))
-        std_dev = fwhm / 2.355 / d_lambda  # in pixels
+        d_lambda = spectra.get_delta_lambda()
+        std_dev = fwhm * cs.FWHM_2_SIGMA / d_lambda  # in pixels
 
         if verbose:
             print('Standard deviation for instrumental dispersion convolution:'
@@ -320,6 +326,96 @@ class SimSpecUtil(object):
 
         return brentq(func, low, high, **kwargs) * 1e3
 
+    @classmethod
+    def remap_wavelengths(cls, spectra, mapping):
+        """
+        Remap/callibrate the wavelengths for the given spectra.
+        :param spectra: Spectra to calibrate the wavelengths.
+        :type spectra: `Spectra`.
+        :param mapping: $\Delta \lambda$ for each wavelength. Must have the
+        same `Spectra.wavelengths` as `spectra`.
+        :type mapping: `Spectra`.
+        :return:
+        """
+        assert np.allclose(spectra.wavelengths, mapping.wavelengths), \
+            'The wavelengths in spectra and mapping must be same!'
+
+        new_wavelengths = spectra.wavelengths + mapping.spectra
+        #sample = interp1d(new_wavelengths, spectra.spectra, kind='linear',
+        #                  bounds_error=False, fill_value=0)
+        #spectra.spectra = sample(spectra.wavelengths)
+        spectra.spectra = np.interp(new_wavelengths, spectra.wavelengths,
+                                    spectra.spectra, left=0., right=0.)
+        return spectra
+
+    @classmethod
+    def apply_throughput(cls, spectra, throughput):
+        """
+        Rescale the spectra according to throughput.
+        :param spectra: Spectra to rescale the spectra according to throughput.
+        :type spectra: `Spectra`.
+        :param throughput: Throughput (0-1) for each wavelength. Must have the
+        same `Spectra.wavelengths` as `spectra`.
+        :type throughput: `Spectra`.
+        :return:
+        """
+        assert np.allclose(spectra.wavelengths, throughput.wavelengths), \
+            'The wavelengths in spectra and throughput must be same!'
+
+        spectra.spectra *= throughput.spectra
+
+        return spectra
+
+    @classmethod
+    def convolve_variable(cls, spectra, fwhm):
+        """
+        Convolve the spectra with a kernel with variable width. The sampling in
+        `spectra.wavelengths` has to be uniform.
+        :param spectjordan : The spectra to convolve.
+        :type spectra: `Spectra`.
+        :param fwhm: FWHM of the Gaussian kernel, variable with wavelength.
+        :type fwhm: `Spectra`.
+        :return:
+        """
+        assert np.allclose(spectra.wavelengths, fwhm.wavelengths), \
+            'The wavelengths in spectra and sigma must be same!'
+
+        # Check if `spectra.wavelengths` is uniformly sampled
+        diffs = np.diff(spectra.wavelengths)
+        assert abs(np.max(diffs) - np.min(diffs)) < \
+                1e-6*spectra.get_delta_lambda(), 'The sampling of ' \
+                                                 'wavelengths must be uniform.'
+
+        delta_lambda = spectra.get_delta_lambda()
+
+        warped_wavelengths = [spectra.wavelengths[0]]
+
+        max_sigma = np.max(fwhm.spectra*cs.FWHM_2_SIGMA)
+        sigma_sample = interp1d(fwhm.wavelengths, fwhm.spectra*cs.FWHM_2_SIGMA,
+                                kind='linear', bounds_error=False,
+                                fill_value=0)
+        n = 0
+        while warped_wavelengths[n] + sigma_sample(warped_wavelengths[n]) / \
+                max_sigma * delta_lambda <= spectra.wavelengths[-1]:
+            warped_wavelengths.append(warped_wavelengths[n]
+                                      + sigma_sample(warped_wavelengths[n])
+                                      / max_sigma * delta_lambda)
+            n += 1
+
+        warped_wavelengths.append(warped_wavelengths[n]
+                                  + sigma_sample(warped_wavelengths[n])
+                                  / max_sigma * delta_lambda)
+
+        warped_spectra = np.interp(warped_wavelengths, spectra.wavelengths,
+                                   spectra.spectra)
+
+        convolved_spectra = gaussian_filter1d(warped_spectra,
+                                              max_sigma/delta_lambda)
+
+        spectra.spectra = np.interp(spectra.wavelengths, warped_wavelengths,
+                                    convolved_spectra)
+        return spectra
+
 
 class SimSpec(object):
     """
@@ -361,7 +457,7 @@ class SimSpec(object):
         :param verbose:
         :return:
         """
-        sim_util = SimSpecUtil()
+        sim_util = SpecUtil()
 
         spectra = deepcopy(self._template)
         spectra = sim_util.redshift_wavelength(spectra, self._redshift)

@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .constants import Constants as cs
 from .spectra import Spectra
-from .simSpec import SimSpecUtil as spec_util
+from .simSpec import SpecUtil as spec_util
 
 _PARENT_DIR = Path(__file__).resolve().parents[1]
 

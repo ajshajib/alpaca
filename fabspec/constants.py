@@ -25,3 +25,7 @@ class Constants(object):
     # Boltzmann constant
     k_b = 1.38064852e-16  # erg/K
     BOLTZMANN = k_b
+
+    # Conversion constants between standard deviation and FWHM
+    SIGMA_2_FWHM = 2.35482004503
+    FWHM_2_SIGMA = 1. / SIGMA_2_FWHM
