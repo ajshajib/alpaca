@@ -1,5 +1,5 @@
 =============================
-Fitter for Absorption-line Spectra
+Alpaca
 =============================
 
 .. image:: https://badge.fury.io/py/fabspec.png
